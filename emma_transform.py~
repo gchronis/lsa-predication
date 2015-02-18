@@ -1,7 +1,7 @@
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-from gensim import corpora, models, similarities
+from gensim import corpora, models, similarities, matutils
 
 
 #LOAD IN OLD DICT AND CORPUS
@@ -23,9 +23,17 @@ lsi.save('emma/model/emma.lsi') # save LSI model trained on emma
 
 # CREATE LSI INSTANCE
 corpus_lsi = lsi[corpus_tfidf] # create a double wrapper over the original corpus: bow->tfidf->fold-in-lsi
-corpora.MmCorpus.serialize('emma/emma_lsi.mm', corpus_lsi)
+corpora.MmCorpus.serialize('emma/emma_doc_lsi.mm', corpus_lsi)
 lsi.print_topics(10)
 
-# CREATE LSI SIMILARITY INDEX
-index = similarities.Similarity('emma/index', corpus_lsi, num_features = 10)
-index.save('emma/emma_lsi.index')
+# CREATE WORD/WORD MATRIX numTerms x numTopics MATRICS
+termcorpus_lsi = matutils.Dense2Corpus(lsi.projection.u.T) 
+corpora.MmCorpus.serialize('emma/emma_term_lsi.mm', termcorpus_lsi)
+
+# CREATE LSI DOCUMENT SIMILARITY INDEX
+index = similarities.Similarity('emma/doc_index', corpus_lsi, num_features = 10)
+index.save('emma/emma_lsi_doc.index')
+
+# CREATE LSI DOCUMENT SIMILARITY INDEX 
+index = similarities.Similarity('emma/term_index', termcorpus_lsi, num_features = 10)
+index.save('emma/emma_lsi_term.index')
