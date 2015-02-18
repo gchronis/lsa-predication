@@ -1,0 +1,13 @@
+import gensim
+
+class MyCorpus(gensim.corpora.TextCorpus):
+
+    def __iter__(self):
+        for line in open('mycorpus.txt'):
+            yield gensim.corpora.dictionary.doc2bow(line.lower().split())
+ 
+    def get_texts(self): 
+        for filename in self.input: # for each relevant file 
+            yield tokenize(open(filename).read()) 
+
+
