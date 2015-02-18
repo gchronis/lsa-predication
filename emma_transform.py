@@ -15,7 +15,7 @@ tfidf.save('emma/model/emma.tfidf') # save TFIDF model trained on emma
 
 #CREATE TFIDF TRANSFORM
 corpus_tfidf = tfidf[corpus] # create a wrapper over the original corpus: bow->tfidf
-corpora.MmCorpus.serialize('emma/emma_tfidf.mm', corpus)
+corpora.MmCorpus.serialize('emma/emma_tfidf.mm', corpus_tfidf)
 
 # TRAIN LSI MODEL
 lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=10) # initialize an LSI transformation
@@ -27,5 +27,5 @@ corpora.MmCorpus.serialize('emma/emma_lsi.mm', corpus_lsi)
 lsi.print_topics(10)
 
 # CREATE LSI SIMILARITY INDEX
-index = similarities.Similarity(lsi[corpus])
+index = similarities.Similarity('emma/index', corpus_lsi, num_features = 10)
 index.save('emma/emma_lsi.index')

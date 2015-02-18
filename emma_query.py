@@ -1,27 +1,60 @@
-
-
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 
 from gensim import corpora, models, similarities
+
+
 dictionary = corpora.Dictionary.load('emma/emma.dict')
-#corpus = corpora.MmCorpus('emma/emma_corpus.mm')
 lsi = models.LsiModel.load('emma/model/emma.lsi')
-corpus_lsi = corpora.MmCorpus('emma/emma_corpus.mm')
-index = 
+corpus_tfidf = corpora.MmCorpus('emma/emma_tfidf.mm')
+corpus_lsi = corpora.MmCorpus('emma/emma_lsi.mm')
+index = similarities.Similarity.load('emma/emma_lsi.index')
 
 
 
-lsi.save('emma/model/emma.lsi') # save LSI model trained on emma                                                                                                                     
-corpus_lsi = lsi[corpus_tfidf] # create a double wrapper over the original corpus: bow->tfidf->fold-in-lsi
-lsi.print_topics(10)
-index = similarities.Similarity(lsi[corpus])
-index.save('emma/emma_lsi.index')
 
-# QUERY EMMA FOR MOST SIMILAR SENTENCES
-sims = index[vec_lsi] # perform a similarity query against the corpus>
-sims = sorted(enumerate(sims), key=lambda item: -item[1])
+# PREPARE QUERY VEC FOR "very well" IN EMMA
+#doc = "very well"
+doc = "She sat upon the stairs thinking of books"
+vec_bow = dictionary.doc2bow(doc.lower().split())
+vec_lsi = lsi[vec_bow] # convert the query to LSI space
+#print(vec_lsi)
+
+
+# QUERY EMMA FOR SENTECES (DOCS) MOST SIMILAR 
+# TO THE STRING "very well"
+#
+# output looks like:
+#
+#    The ten most similar sentences to very well in Emma by Jane Austen are: 
+#    Cosine Similarity: 1.0
+#        [(0, -0.153258483793), (1, -0.0352078798501), (2, 0.197779559735), (3, -0.208095698222), 
+#            (4, 0.0983957520685), (5, 0.164967470944), (6, 0.11485867992), 
+#            (7, -0.119482831365), (8, 0.0114872799855), (9, -0.441601634238)]
+#        [(3985, 1.0)]
+#    Cosine Similarity: 1.0
+#        [(0, -0.153258483793), (1, -0.0352078798501), (2, 0.197779559735), (3, -0.208095698222), 
+#            (4, 0.0983957520685), (5, 0.164967470944), (6, 0.11485867992), 
+#            (7, -0.119482831365), (8, 0.0114872799855), (9, -0.441601634238)]
+#        [(3985, 1.0)]
+#
+#    . . . 
+#
+# The first vector is the lsi vector for the returned document, consisting of (dimension,value) tuples
+# The sencond vector is the tfidf vector for the returned document, consisting of (wordid,weighted doc_freq) tuples
+#
+#
+
+sims = index[vec_lsi] # perform a similarity query against the corpus
+sims = sorted(enumerate(sims), key=lambda item: -item[1]) # sort similar documents in descending order according to cos.
 print("The ten most similar sentences to " + doc + " in Emma by Jane Austen are: ")
-print(sims[1:10]) # print sorted (document number, similarity score) 2-tuples 
+for doc,sim in sims[1:10]:
+    lsi_vec = corpus_lsi[doc]
+    tfidf_vec = corpus_tfidf[doc]
+    words = [dictionary.get(wordid) for wordid,doc_freq in tfidf_vec]
+    print("Cosine Similarity: " + str(sim))
+    print("\t\t" + str(words))
+    print("\t\t" + str(lsi_vec))
+    print("\t\t" + str(tfidf_vec)) 
 
